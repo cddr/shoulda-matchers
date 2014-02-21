@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Shoulda::Matchers::ActionController do
   describe "#permit" do
     it 'matches when the sent parameter is allowed' do
-      controller_class = controller_for_resource_with_strong_parameters do
+      controller_class = controller_for_resource_with_strong_parameters(action: :create) do
         params.require(:user).permit(:name)
       end
 
@@ -11,7 +11,7 @@ describe Shoulda::Matchers::ActionController do
     end
 
     it 'does not match when the sent parameter is not allowed' do
-      controller_class = controller_for_resource_with_strong_parameters do
+      controller_class = controller_for_resource_with_strong_parameters(action: :create) do
         params.require(:user).permit(:name)
       end
 
@@ -19,7 +19,7 @@ describe Shoulda::Matchers::ActionController do
     end
 
     it 'matches against multiple attributes' do
-      controller_class = controller_for_resource_with_strong_parameters do
+      controller_class = controller_for_resource_with_strong_parameters(action: :create) do
         params.require(:user).permit(:name, :age)
       end
 
@@ -30,29 +30,37 @@ end
 
 describe Shoulda::Matchers::ActionController::StrongParametersMatcher do
   describe "#matches?" do
-    before do
-      controller_for_resource_with_strong_parameters do
-        params.require(:user).permit(:name, :age)
-      end
-    end
-
     it "is true for a subset of the allowable attributes" do
+      controller_for_resource_with_strong_parameters(action: :create) do
+        params.require(:user).permit(:name)
+      end
+
       matcher = described_class.new([:name]).in_context(self).for(:create)
       expect(matcher.matches?).to be_true
     end
 
     it "is true for all the allowable attributes" do
+      controller_for_resource_with_strong_parameters(action: :create) do
+        params.require(:user).permit(:name, :age)
+      end
+
       matcher = described_class.new([:name, :age]).in_context(self).for(:create)
       expect(matcher.matches?).to be_true
     end
 
     it "is false when any attributes are not allowed" do
+      controller_for_resource_with_strong_parameters(action: :create) do
+        params.require(:user).permit(:name)
+      end
+
       matcher = described_class.new([:name, :admin]).in_context(self).for(:create)
       expect(matcher.matches?).to be_false
     end
 
     it "is false when permit is not called" do
-      matcher = described_class.new([:name]).in_context(self).for(:new, verb: :get)
+      controller_for_resource_with_strong_parameters(action: :create) {}
+
+      matcher = described_class.new([:name]).in_context(self).for(:create)
       expect(matcher.matches?).to be_false
     end
 
@@ -71,7 +79,7 @@ describe Shoulda::Matchers::ActionController::StrongParametersMatcher do
 
   describe "failure message" do
     it "includes all missing attributes" do
-      controller_class = controller_for_resource_with_strong_parameters do
+      controller_class = controller_for_resource_with_strong_parameters(action: :create) do
         params.require(:user).permit(:name, :age)
       end
 
@@ -81,7 +89,7 @@ describe Shoulda::Matchers::ActionController::StrongParametersMatcher do
     end
 
     it "includes all attributes that should not have been allowed but were" do
-      controller_class = controller_for_resource_with_strong_parameters do
+      controller_class = controller_for_resource_with_strong_parameters(action: :create) do
         params.require(:user).permit(:name, :age)
       end
 
@@ -113,7 +121,7 @@ describe Shoulda::Matchers::ActionController::StrongParametersMatcher do
     end
 
     context "when given a custom action and verb" do
-      it "puts to the controller" do
+      it "deletes to the controller" do
         context = stub('context', delete: nil)
         matcher = described_class.new([:name]).in_context(context).for(:hide, verb: :delete)
 
