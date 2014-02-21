@@ -3,25 +3,16 @@ require 'spec_helper'
 describe Shoulda::Matchers::ActionController::CallbackMatcher do
   shared_examples 'CallbackMatcher' do |method_name, kind, callback_type|
     let(:matcher) { described_class.new(method_name, kind, callback_type) }
+    let(:controller) { define_controller('HookController') }
 
     describe '#matches?' do
-      it 'matches when a before hook is in place' do
+      it "matches when a #{kind} hook is in place" do
         add_callback(kind, callback_type, method_name)
 
         expect(matcher.matches?(controller)).to be_true
       end
 
-      it 'does not match when a before hook is missing' do
-        expect(matcher.matches?(controller)).to be_false
-      end
-
-      it 'matches when an after hook is in place' do
-        add_callback(kind, callback_type, method_name)
-
-        expect(matcher.matches?(controller)).to be_true
-      end
-
-      it 'does not match when a after hook is missing' do
+      it "does not match when a #{kind} hook is missing" do
         expect(matcher.matches?(controller)).to be_false
       end
     end
@@ -32,7 +23,7 @@ describe Shoulda::Matchers::ActionController::CallbackMatcher do
       end
     end
 
-    describe 'failure' do
+    describe 'failure message' do
       it 'includes the filter kind and name that was expected' do
         message = "Expected that HookController would have :#{method_name} as a #{kind}_#{callback_type}"
 
@@ -42,7 +33,7 @@ describe Shoulda::Matchers::ActionController::CallbackMatcher do
       end
     end
 
-    describe '#failure_message_when_negated' do
+    describe 'failure message when negated' do
       it 'includes the filter kind and name that was expected' do
         add_callback(kind, callback_type, method_name)
         message = "Expected that HookController would not have :#{method_name} as a #{kind}_#{callback_type}"
@@ -58,10 +49,6 @@ describe Shoulda::Matchers::ActionController::CallbackMatcher do
     def add_callback(kind, callback_type, callback)
       controller.send("#{kind}_#{callback_type}", callback)
     end
-
-    def controller
-      @controller ||= define_controller('HookController')
-    end
   end
 
   describe '#use_before_filter' do
@@ -76,7 +63,7 @@ describe Shoulda::Matchers::ActionController::CallbackMatcher do
     it_behaves_like 'CallbackMatcher', :log_activity, :around, :filter
   end
 
-  if Rails.version.to_i >= 4
+  if rails_4_x?
     describe '#use_before_action' do
       it_behaves_like 'CallbackMatcher', :authenticate_user!, :before, :action
     end
